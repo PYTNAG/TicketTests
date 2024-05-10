@@ -5,7 +5,7 @@ namespace TicketTests;
 [TestFixture]
 public class TicketsTest
 {
-    [Test, TestCaseSource(typeof(TicketsSource), nameof(TicketsSource.TicketFiles))]
+    [Test, TestCaseSource(typeof(TicketsSource), nameof(TicketsSource.TicketFiles), new object?[]{ null })]
     public void TestTicketsSource(string ticketFile)
     {
         Assert.DoesNotThrow(() =>
@@ -50,6 +50,25 @@ public class TicketsTest
 
     private class TicketsSource
     {
-        public static IEnumerable<string> TicketFiles => Directory.GetFiles("promit", "*.txt");
+        public static IEnumerable<string> TicketFiles(string? folder = null)
+        {
+            if (folder is not null)
+            {
+                return Directory.EnumerateFiles(folder, "*.txt");
+            }
+
+            string workingDirectory = Directory.GetCurrentDirectory();
+            DirectoryInfo? currentirectory = new DirectoryInfo(workingDirectory);
+            while (!currentirectory.EnumerateDirectories("promit").Any())
+            {
+                currentirectory = currentirectory.Parent;
+                if (currentirectory is null)
+                {
+                    throw new Exception($"\"promit\" folder not found in parents of working directory {workingDirectory}");
+                }
+            }
+            
+            return Directory.GetFiles($"{currentirectory.FullName}{Path.DirectorySeparatorChar}promit", "*.txt");
+        }
     }
 }
